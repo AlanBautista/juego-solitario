@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solitario</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Eagle+Lake&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Delius+Unicase:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Eater&display=swap" rel="stylesheet">
+    <style>
+        .eater-regular {
+            font-family: "Eater", serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .eagle-lake-regular {
+            font-family: "Eagle Lake", serif;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .delius-unicase-regular {
+            font-family: "Delius Unicase", cursive;
+            font-weight: 400;
+            font-style: normal;
+        }
+
+        .delius-unicase-bold {
+            font-family: "Delius Unicase", cursive;
+            font-weight: 700;
+            font-style: normal;
+        }
+
+
+        body {
+            background-color: #252057;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            transition: background-color 0.8s ease;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(7, 100px);
+            gap: 10px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+        .card-pile {
+            width: 90px;
+            height: 120px;
+            border: 2px solid #271a38;
+            border-radius: 5px;
+            background-color: #2f0f45ff;
+            position: relative;
+            transition: background-color 0.8s ease, border-color 0.8s ease;
+        }
+
+        .card {
+            width: 90px;
+            height: 120px;
+            border-radius: 5px;
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            padding: 5px;
+            box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+
+        .card.red { color: #ea2635ff; }
+        .card.black { color: #161931ff; }
+
+        .card.back {
+            background-color: #37a9e1ff;
+            background-image:
+                linear-gradient(45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.1) 75%),
+                linear-gradient(-45deg, rgba(255, 255, 255, 0.1) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.1) 75%);
+            background-size: 20px 20px;
+            border: 5px solid white;
+            color: transparent;
+        }
+
+        #stock-pile { cursor: pointer; }
+        #waste-pile { border-style: dashed; }
+        .foundation-pile { border-style: dashed; }
+        .tableau-pile { height: 500px; }
+
+        #restart-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #3353a0;
+            color: white;
+            transition: background-color 0.8s ease;
+        }
+
+        .card .top-left, .card .bottom-right {
+            position: absolute;
+            font-size: 16px;
+            line-height: 1;
+            font-weight: bold;
+        }
+        .card .top-left { top: 5px; left: 5px; text-align: center; }
+        .card .bottom-right { bottom: 5px; right: 5px; transform: rotate(180deg); text-align: center; }
+        .card .center-suit {
+            position: absolute;
+            font-size: 48px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            line-height: 1;
+        }
+        .card .top-left .value, .card .bottom-right .value { display: block; margin-bottom: -5px; }
+
+        #game-stats {
+            color: white;
+            font-size: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 20px;
+        }
+
+        /* ESTILOS PROGRESIVOS */
+        body.mood-1 { background-color: #4a1e3a; }
+        body.mood-1 .card-pile { background-color: #3a132a; border-color: #2e0e20; }
+        body.mood-1 #restart-button { background-color: #8c3b71; }
+        body.mood-2 { background-color: #572020; }
+        body.mood-2 .card-pile { background-color: #450f0f; border-color: #381a1a; }
+        body.mood-2 #restart-button { background-color: #a03333; }
+        body.mood-3 { background-color: #6b0000; }
+        body.mood-3 .card-pile { background-color: #4d0000; border-color: #3b0000; }
+        body.mood-3 #restart-button { background-color: #c00; }
+        
+        /* ESTILOS PARA LA ADVERTENCIA DEL DEMONIO */
+        #demon-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #8b0000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #demon-warning.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #demon-warning p {
+            color: white;
+            font-size: 3em;
+            text-align: center;
+            text-shadow: 2px 2px 10px black;
+            font-family: "Eater", serif;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <h1 style="color:white" class="eagle-lake-regular">Solitario</h1>
+    <div id="game-stats" class="eagle-lake-regular">
+        <span>Puntaje: <span id="score-value">0</span></span>
+        <span>Movimientos: <span id="moves-value">0</span></span>
+    </div>
+    <button id="restart-button" style="margin-top: 20px; margin-bottom: 20px;" class="eagle-lake-regular">Reiniciar Juego</button>
+    <div id="game-container">
+        <div id="top-piles" style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <div id="stock-pile" class="card-pile"></div>
+            <div id="waste-pile" class="card-pile"></div>
+            <div id="foundation-container" style="display: flex; gap: 10px; margin-left: 30px;">
+                <div class="foundation-pile card-pile" data-suit="♥"></div>
+                <div class="foundation-pile card-pile" data-suit="♦"></div>
+                <div class="foundation-pile card-pile" data-suit="♣"></div>
+                <div class="foundation-pile card-pile" data-suit="♠"></div>
+            </div>
+        </div>
+        <div id="game-board">
+            <div class="tableau-pile card-pile"></div>
+            <div class="tableau-pile card-pile"></div>
+            <div class="tableau-pile card-pile"></div>
+            <div class="tableau-pile card-pile"></div>
+            <div class="tableau-pile card-pile"></div>
+            <div class="tableau-pile card-pile"></div>
+            <div class="tableau-pile card-pile"></div>
+        </div>
+    </div>
+
+    <div id="demon-warning">
+        <p>Si pierdes esta nueva oportunidad<br>tu alma será mía</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const suits = ['♥', '♦', '♣', '♠'];
+            const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+            let deck = [];
+
+            const stockPile = document.getElementById('stock-pile');
+            const wastePile = document.getElementById('waste-pile');
+            const foundationPiles = document.querySelectorAll('.foundation-pile');
+            const tableauPiles = document.querySelectorAll('.tableau-pile');
+            const restartButton = document.getElementById('restart-button');
+            const demonWarningDiv = document.getElementById('demon-warning');
+
+            let score = 0;
+            let moves = 0;
+            const scoreElement = document.getElementById('score-value');
+            const movesElement = document.getElementById('moves-value');
+
+            let draggedStack = [];
+            let animationFrameId = null;
+
+            // --- SECCIÓN DE MÚSICA Y SONIDOS ---
+            const happyMusic = new Audio('./happy_sound.mp3');
+            const badMusic = new Audio('./bad_sound.mp3');
+            const predemonMusic = new Audio('./predemond_sound.mp3');
+            const demonMusic = new Audio('./demond_sound.mp3');
+            const winSound = new Audio('./win_sound.mp3');
+
+            const allMusic = [happyMusic, badMusic, predemonMusic, demonMusic];
+            allMusic.forEach(music => {
+                music.loop = true;
+                music.volume = 0.3;
+            });
+            winSound.volume = 0.5;
+
+            let musicState = 0;
+
+            function stopAllMusic() {
+                allMusic.forEach(music => {
+                    music.pause();
+                    music.currentTime = 0;
+                });
+            }
+
+            function switchMainFont(fontClassToAdd, fontClassToRemove) {
+                 const elementsToChange = document.querySelectorAll('.' + fontClassToRemove);
+                 elementsToChange.forEach(el => {
+                    el.classList.remove(fontClassToRemove);
+                    el.classList.add(fontClassToAdd);
+                 });
+            }
+
+            function checkMusicAndStyleSwitch() {
+                if (moves > 120 && musicState < 4) {
+                    stopAllMusic();
+                    demonMusic.play();
+                    document.body.className = 'mood-3';
+                    musicState = 4;
+                } else if (moves > 80 && musicState < 3) {
+                    stopAllMusic();
+                    predemonMusic.play();
+                    document.body.className = 'mood-2';
+                    musicState = 3;
+                    switchMainFont('eater-regular', 'eagle-lake-regular');
+                } else if (moves > 30 && musicState < 2) {
+                    stopAllMusic();
+                    badMusic.play();
+                    document.body.className = 'mood-1';
+                    musicState = 2;
+                } else if (musicState < 1 && moves <= 30) {
+                    happyMusic.play();
+                    musicState = 1;
+                }
+            }
+
+            function startMusicIfNeeded() {
+                if (musicState === 0) {
+                    checkMusicAndStyleSwitch();
+                }
+            }
+            
+            function updateScoreboard() {
+                scoreElement.textContent = score;
+                movesElement.textContent = moves;
+            }
+
+            function createDeck() {
+                deck = [];
+                for (const suit of suits) {
+                    for (const value of values) {
+                        deck.push({ suit, value, faceUp: false, color: (suit === '♥' || suit === '♦') ? 'red' : 'black' });
+                    }
+                }
+            }
+            
+            function shuffleDeck() {
+                for (let i = deck.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [deck[i], deck[j]] = [deck[j], deck[i]];
+                }
+            }
+            
+            // --- MODIFICADO: LÓGICA DE REPARTO VUELVE AL MODO DIFÍCIL ---
+            function dealCards() {
+                document.body.querySelectorAll('.card').forEach(card => {
+                    if (card.parentElement === document.body) card.remove();
+                });
+                [stockPile, wastePile, ...foundationPiles, ...tableauPiles].forEach(pile => pile.innerHTML = '');
+
+                let cardIndex = 0;
+                for (let i = 0; i < tableauPiles.length; i++) {
+                    tableauPiles[i].innerHTML = '';
+                    for (let j = 0; j <= i; j++) {
+                        const cardData = deck[cardIndex++];
+
+                        // Solo la última carta de la pila (cuando j === i) se pone boca arriba.
+                        if (j === i) {
+                            cardData.faceUp = true;
+                        }
+
+                        const card = createCardElement(cardData);
+                        card.style.top = `${j * 25}px`;
+                        tableauPiles[i].appendChild(card);
+                    }
+                }
+
+                while (cardIndex < deck.length) {
+                    const cardData = deck[cardIndex++];
+                    const card = createCardElement(cardData);
+                    stockPile.appendChild(card);
+                }
+            }
+            
+            function createCardElement(cardData) {
+                const card = document.createElement('div');
+                card.classList.add('card', cardData.color, 'delius-unicase-bold');
+                card.dataset.value = cardData.value;
+                card.dataset.suit = cardData.suit;
+                updateCardDisplay(card, cardData); // updateCardDisplay decidirá si mostrarla boca arriba o abajo
+                card.addEventListener('dragstart', (e) => {
+                    startMusicIfNeeded();
+                    if (card.classList.contains('back')) {
+                        e.preventDefault();
+                        return;
+                    }
+                    const fromPile = card.parentElement;
+                    let potentialStack = [];
+                    if (fromPile.classList.contains('tableau-pile')) {
+                        const cardsInPile = Array.from(fromPile.children);
+                        const startIndex = cardsInPile.indexOf(card);
+                        potentialStack = cardsInPile.slice(startIndex);
+                    } else {
+                        potentialStack = [card];
+                    }
+                    if (potentialStack.every(c => !c.classList.contains('back'))) {
+                        draggedStack = potentialStack;
+                        setTimeout(() => draggedStack.forEach(c => c.style.display = 'none'), 0);
+                    } else {
+                        e.preventDefault();
+                        draggedStack = [];
+                    }
+                });
+                card.addEventListener('dragend', () => {
+                    setTimeout(() => {
+                        draggedStack.forEach(c => c.style.display = 'block');
+                        draggedStack = [];
+                    }, 0);
+                });
+                return card;
+            }
+            
+            function updateCardDisplay(cardElement, cardData) {
+                cardElement.innerHTML = '';
+                if (!cardData.faceUp) {
+                    cardElement.classList.add('back');
+                    cardElement.draggable = false;
+                } else {
+                    cardElement.classList.remove('back');
+                    cardElement.innerHTML = `
+                        <div class="top-left"><span class="value">${cardData.value}</span><span class="suit">${cardData.suit}</span></div>
+                        <div class="center-suit">${cardData.suit}</div>
+                        <div class="bottom-right"><span class="value">${cardData.value}</span><span class="suit">${cardData.suit}</span></div>
+                    `;
+                    cardElement.draggable = true;
+                }
+            }
+            
+            function getValueRank(value) {
+                if (value === 'A') return 1;
+                if (value === 'K') return 13;
+                if (value === 'Q') return 12;
+                if (value === 'J') return 11;
+                return parseInt(value);
+            }
+            
+            function canPlaceOnTableau(cardToMove, targetCard) {
+                const moveRank = getValueRank(cardToMove.dataset.value);
+                const targetRank = getValueRank(targetCard.dataset.value);
+                const moveColor = (cardToMove.dataset.suit === '♥' || cardToMove.dataset.suit === '♦') ? 'red' : 'black';
+                const targetColor = (targetCard.dataset.suit === '♥' || targetCard.dataset.suit === '♦') ? 'red' : 'black';
+                return moveColor !== targetColor && moveRank === targetRank - 1;
+            }
+            
+            function canPlaceOnFoundation(cardToMove, targetPile) {
+                const foundationSuit = targetPile.dataset.suit;
+                const lastCard = targetPile.lastElementChild;
+                const cardSuit = cardToMove.dataset.suit;
+                const cardRank = getValueRank(cardToMove.dataset.value);
+                if (cardSuit !== foundationSuit) return false;
+                if (!lastCard) return cardRank === 1;
+                const lastCardRank = getValueRank(lastCard.dataset.value);
+                return cardRank === lastCardRank + 1;
+            }
+            
+            tableauPiles.forEach(pile => {
+                pile.addEventListener('dragover', (e) => e.preventDefault());
+                pile.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const targetPile = e.target.closest('.tableau-pile');
+                    if (!targetPile || draggedStack.length === 0) return;
+                    const cardToMove = draggedStack[0];
+                    const lastCardOnTarget = targetPile.lastElementChild;
+                    if (!lastCardOnTarget) {
+                        if (cardToMove.dataset.value === 'K') moveStack(draggedStack, targetPile);
+                    } else {
+                        if (canPlaceOnTableau(cardToMove, lastCardOnTarget)) moveStack(draggedStack, targetPile);
+                    }
+                    checkWinCondition();
+                });
+            });
+            
+            foundationPiles.forEach(pile => {
+                pile.addEventListener('dragover', (e) => e.preventDefault());
+                pile.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const targetPile = e.target.closest('.foundation-pile');
+                    if (!targetPile || draggedStack.length !== 1) return;
+                    const cardToMove = draggedStack[0];
+                    if (canPlaceOnFoundation(cardToMove, targetPile)) moveStack(draggedStack, targetPile);
+                    checkWinCondition();
+                });
+            });
+            
+            function moveStack(stack, toPile) {
+                const fromPile = stack[0].parentElement;
+                moves++;
+                updateScoreboard();
+                checkMusicAndStyleSwitch();
+                if (toPile.classList.contains('foundation-pile')) score += 10;
+                else if (fromPile.id === 'waste-pile' && toPile.classList.contains('tableau-pile')) score += 5;
+                else if (fromPile.classList.contains('foundation-pile') && toPile.classList.contains('tableau-pile')) score -= 15;
+                updateScoreboard();
+
+                const initialToPileCount = toPile.children.length;
+                stack.forEach((card, index) => {
+                    card.style.top = toPile.classList.contains('tableau-pile') ? `${(initialToPileCount + index) * 25}px` : '0px';
+                    card.style.display = 'block';
+                    toPile.appendChild(card);
+                });
+                draggedStack = [];
+                // Esta lógica ahora es crucial para voltear cartas en modo difícil
+                if (fromPile && fromPile.classList.contains('tableau-pile') && fromPile.children.length > 0) {
+                    const newLastCard = fromPile.lastElementChild;
+                    const cardData = deck.find(d => d.value === newLastCard.dataset.value && d.suit === newLastCard.dataset.suit);
+                    if (cardData && !cardData.faceUp) {
+                        cardData.faceUp = true;
+                        updateCardDisplay(newLastCard, cardData);
+                        score += 5;
+                        updateScoreboard();
+                    }
+                }
+            }
+            
+            stockPile.addEventListener('click', () => {
+                startMusicIfNeeded();
+                if (stockPile.children.length === 0) {
+                    while (wastePile.children.length > 0) {
+                        const card = wastePile.lastElementChild;
+                        const cardData = deck.find(d => d.value === card.dataset.value && d.suit === card.dataset.suit);
+                        cardData.faceUp = false;
+                        updateCardDisplay(card, cardData);
+                        stockPile.appendChild(card);
+                    }
+                } else {
+                    const card = stockPile.lastElementChild;
+                    const cardData = deck.find(d => d.value === card.dataset.value && d.suit === card.dataset.suit);
+                    cardData.faceUp = true;
+                    updateCardDisplay(card, cardData);
+                    card.style.top = '0px';
+                    wastePile.appendChild(card);
+                }
+            });
+
+            function checkWinCondition() {
+                const totalCardsInFoundation = Array.from(foundationPiles).reduce((total, pile) => total + pile.children.length, 0);
+                if (totalCardsInFoundation === 52) {
+                    stopAllMusic();
+                    winSound.play();
+                    document.body.className = '';
+                    switchMainFont('eagle-lake-regular', 'eater-regular');
+                    setTimeout(() => {
+                        alert(`¡Felicidades, has ganado! 🏆\nPuntaje Final: ${score}`);
+                        triggerWinAnimation();
+                    }, 100);
+                }
+            }
+            
+            function resetGame() {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                score = 0;
+                moves = 0;
+                updateScoreboard();
+
+                document.body.className = '';
+                stopAllMusic();
+                musicState = 0;
+                switchMainFont('eagle-lake-regular', 'eater-regular');
+
+                createDeck();
+                shuffleDeck();
+                dealCards();
+            }
+            
+            function startGame() {
+                if (musicState === 4) {
+                    demonWarningDiv.classList.add('visible');
+                    demonMusic.volume = 0.6;
+                    setTimeout(() => {
+                        demonWarningDiv.classList.remove('visible');
+                        demonMusic.volume = 0.3;
+                        resetGame();
+                    }, 5000); 
+                } else {
+                    resetGame();
+                }
+            }
+
+            restartButton.addEventListener('click', startGame);
+
+            function triggerWinAnimation() {
+                const cardsToAnimate = [];
+                foundationPiles.forEach(pile => {
+                    Array.from(pile.children).forEach(cardElement => {
+                        const rect = cardElement.getBoundingClientRect();
+                        document.body.appendChild(cardElement);
+                        cardElement.style.position = 'absolute';
+                        cardsToAnimate.push({
+                            element: cardElement,
+                            x: rect.left,
+                            y: rect.top,
+                            dx: Math.random() * 10 - 5,
+                            dy: Math.random() * -10 - 5
+                        });
+                    });
+                });
+                function animate() {
+                    cardsToAnimate.forEach(card => {
+                        card.dy += 0.2;
+                        card.x += card.dx;
+                        card.y += card.dy;
+                        if (card.x <= 0 || card.x + card.element.offsetWidth >= window.innerWidth) card.dx *= -1;
+                        if (card.y <= 0 || card.y + card.element.offsetHeight >= window.innerHeight) {
+                            card.dy *= -0.85;
+                            if (card.y + card.element.offsetHeight >= window.innerHeight) {
+                                card.y = window.innerHeight - card.element.offsetHeight;
+                            }
+                        }
+                        card.element.style.left = `${card.x}px`;
+                        card.element.style.top = `${card.y}px`;
+                    });
+                    animationFrameId = requestAnimationFrame(animate);
+                }
+                animate();
+            }
+
+            resetGame();
+        });
+    </script>
+
+</body>
+
+</html>
